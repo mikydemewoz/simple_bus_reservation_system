@@ -1,0 +1,687 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <windows.h>
+
+#define ENTER 13
+#define TAB 9
+#define BKSP 8
+
+void firstDisplay(){
+    int input;
+    printf("----------------------------\n")
+    printf("Enter 1) Passanger\n");
+    printf("      2) Admin\n");
+    printf("      3) exit\n");
+    printf("----------------------------")
+
+    scanf("%d",&input);
+    switch(input){
+        case 1:
+            passangerDisplay1();
+            break;
+        case 2:
+            enter_password();
+            break;
+        case 3:
+            exit(1);
+        default:
+            printf("Please Enter 1 or 2\n");
+            firstDisplay();
+            system("cls");
+    }
+}
+
+void enter_password()
+{
+
+    int i=0;
+    char ch;
+    char pass[100];
+    printf("Enter the password: ");
+
+    while(1)
+    {
+        ch = getch();
+        if(ch == ENTER || ch == TAB)
+        {
+            pass[i]='\0';
+            break;
+        }else if(ch == BKSP)
+        {
+            if(i>0)
+            {
+                i--;
+                printf("\b \b");
+            }
+        }else
+        {
+            pass[i++]=ch;
+            printf("* \b");
+        }
+    }
+
+    if(strcmp("admin",pass)==0){
+        adminDisplay1();
+    }else{
+        printf("wrong password\n");
+    }
+}
+
+void passangerDisplay1(){
+    system("cls");
+    int input;
+
+    printf("----------------------------\n")
+    printf("Enter 1) Reservation\n");
+    printf("      2) Fare calculation\n");
+    printf("      3) Ticket info\n");
+    printf("      4) Back\n");
+    printf("----------------------------")
+
+    scanf("%d",&input);
+    switch(input){
+        case 1:
+            ReservationDisplay1();
+            break;
+        case 2:
+            calcDisplay1();
+            break;
+        case 3:
+            ticketInfoDisplay1();
+            break;
+        case 4:
+            system("cls");
+            firstDisplay();
+            break;
+        default:
+            printf("Please Enter 1 , 2 or 3\n");
+            passangerDisplay1();
+    }
+}
+
+void adminDisplay1(){
+    system("cls");
+    int input;
+    printf("----------------------------\n")
+    printf("Enter 1) Insert new Bus\n");
+    printf("      2) See all available Buses\n");
+    printf("      3) Update bus info\n");
+    printf("      4) Back\n");
+    printf("----------------------------")
+
+    scanf("%d",&input);
+    switch(input){
+        case 1:
+            InsertBusDisplay1();
+            break;
+        case 2:
+            SeeBusesDisplay1();
+            break;
+        case 3:
+            updateBusDisplay1();
+            break;
+        case 4:
+            firstDisplay();
+            break;
+        default:
+            printf("Please Enter 1 , 2 or 3\n");
+            adminDisplay1();
+    }
+}
+
+void sourceDisplay(){
+    system("cls");
+    FILE *fp;
+    printf("Enter your source\n");
+    fp = fopen("source_info.txt","r");
+    char sou[20];
+    int id;
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s",&id,sou);
+        printf("%d) %s\n",id,sou);
+    }
+    fclose(fp);
+
+}
+
+void destinationDisplay(){
+    system("cls");
+    FILE *fp;
+    char des[20];
+    int id;
+    printf("Enter your destination\n");
+    fp = fopen("destination_info.txt","r");
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s",&id,des);
+        printf("%d) %s\n",id,des);
+    }
+    fclose(fp);
+
+
+
+}
+
+void ReservationDisplay1(){
+    system("cls");
+
+    int day,month,year;
+
+    char fName[12],lName[12],phoneNum[13],reservation_day[10]="today";
+    int seatNum,source,destination,ticket_num;
+
+    //Bus info
+    int bus_id,source_id,destination_id,distance,tot_time;
+    char plate_num[10],start_time[10];
+    //
+
+    ticket_num = generate_ticket_num();
+    printf("Enter your First Name: ");
+    //scanf("%s",fName);
+
+    if (scanf(" %12[a-zA-Z]", fName) == 1) {
+        printf("Name : %s",lName);
+    }else{
+        printf("Error: Invalid input!");
+    }
+    printf("Enter your Last Name: ");
+    scanf("%s",lName);
+    printf("Enter your phone Number: ");
+    scanf("%s",phoneNum);
+    sourceDisplay();
+    scanf("%d",&source);
+    destinationDisplay();
+    scanf("%d",&destination);
+    seatNum_lbl:
+    printf("Enter your seat number 1-32: ");
+    scanf("%d",&seatNum);
+    printf("Enter the reservation day/month/year: ");
+    scanf("%d\t%d\t%d",&day,&month,&year);
+    if(check_day(day,month,year)==0)
+    {
+        printf("You entered the wrong day\n");
+    }else
+    {
+        printf("I am ok\n");
+        if(check(seatNum,source,destination)){
+        if(source==destination)
+        {
+            system("cls");
+            printf("you entered the same source and destination\n");
+            printf("Enter the data again\n");
+        }else
+        {
+            FILE *fp_bus_info;
+            FILE *fp_passanger_info;
+            fp_bus_info = fopen("Bus_info.txt","r");
+
+            sprintf(reservation_day, "%d/%d/%d", day,month,year);
+
+            while(!feof(fp_bus_info))
+            {
+                fscanf(fp_bus_info,"%d\t%s\t%d\t%d\t%d\t%s\t%d",&bus_id,plate_num,&source_id,&destination_id,&distance,start_time,&tot_time);
+                if(source_id == source && destination_id == destination)
+                {
+                    if(check_seat_available(bus_id,seatNum,reservation_day))
+                    {
+
+                        fp_passanger_info = fopen("Passanger_info.txt","a");
+                        fprintf(fp_passanger_info,"%d\t%s\t%s\t%s\t%d\t%d\t%s\n",ticket_num,fName,lName,phoneNum,bus_id,seatNum,reservation_day);
+                    }else
+                    {
+                        printf("The seat number is taken please enter other seat number: \n");
+                        goto seatNum_lbl;
+                    }
+
+                }
+            }
+            fclose(fp_passanger_info);
+            fclose(fp_bus_info);
+        }
+    }else{
+        printf("Please Enter the values correctly: ");
+        ReservationDisplay1();
+    }
+    }
+
+
+}
+
+int check_day(int day,int month,int year)
+{
+    //get system day
+    //stime.wDay,stime.wMonth,stime.wYear
+    SYSTEMTIME stime;
+    GetSystemTime(&stime);
+    if(year<stime.wYear)
+    {
+        return 0;
+    }else if(year == stime.wYear && day <= stime.wMonth && year <= stime.wDay)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+
+    }
+}
+
+int check_seat_available(int x,int y,char res_day[])
+{
+    //passenger info
+    char fName[12],lName[12],phoneNum[13],reservation_day[10];
+    int seatNum,source,destination,ticket_num,bus_id;
+    //
+    FILE *fp_passanger_info;
+    fp_passanger_info = fopen("Passanger_info.txt","r");
+    while(!feof(fp_passanger_info))
+    {
+        fscanf(fp_passanger_info,"%d\t%s\t%s\t%s\t%d\t%d\t%s\n",&ticket_num,fName,lName,phoneNum,&bus_id,&seatNum,reservation_day);
+        if(bus_id == x && seatNum == y && strcmp(reservation_day,res_day)==0)
+        {
+            fclose(fp_passanger_info);
+            return 0;
+        }
+
+
+    }
+    fclose(fp_passanger_info);
+    return 1;
+}
+
+int generate_ticket_num()
+{
+    srand(time(0));
+    return rand() %100+1;
+}
+
+int check(int seatNum,int source,int destination){
+    if(seatNum>32)
+        return 0;
+    else if(source>4 && source<1)
+        return 0;
+    else if(destination>4 && destination<1)
+        return 0;
+    else
+        return 1;
+
+}
+
+void calcDisplay1(){
+    int source,destination;
+    double tot_money;
+
+    int bus_id,source_id,destination_id,distance,tot_time;
+    char plate_num[10],start_time[10];
+
+    int flage = 0;
+
+    sourceDisplay();
+    scanf("%d",&source);
+    destinationDisplay();
+    scanf("%d",&destination);
+    FILE *fp_bus_info;
+    fp_bus_info = fopen("Bus_info.txt","r");
+
+    while(!feof(fp_bus_info))
+    {
+        fscanf(fp_bus_info,"%d\t%s\t%d\t%d\t%d\t%s\t%d",&bus_id,plate_num,&source_id,&destination_id,&distance,start_time,&tot_time);
+        if(source_id == source && destination_id == destination)
+        {
+            tot_money = distance*0.5;
+            printf("           ----------------------------\n")
+            printf("           Total money: %f Birr\n",tot_money);
+            printf("           Total time: %d hour",tot_time);
+            printf("           ----------------------------\n")
+            flage = 1;
+        }
+    }
+    if(flage == 0)
+    {
+        printf("We have not started the routine yet\n");
+    }
+    fclose(fp_bus_info);
+}
+
+void ticketInfoDisplay1(){
+
+    //passanger info
+    char fName[12],lName[12],phoneNum[13],reservation_day[10];
+    int seatNum,source,destination,ticket_num,bus_id2;
+
+    //bus info
+    int bus_id,source_id,destination_id,distance,tot_time;
+    char plate_num[10],start_time[10];
+
+    //source info
+    char sou[20];
+    int id_so;
+
+    //destination info
+    char des[20];
+    int id_des;
+
+    int ticket_number,flag=0;
+    int count = 2;
+    char back_var[1];
+
+    FILE *fp_passanger_info,*fp_bus_info,*fp_source_info,*fp_destination_info;
+    fp_passanger_info = fopen("Passanger_info.txt","r");
+    fp_bus_info = fopen("Bus_info.txt","r");
+    fp_source_info = fopen("source_info.txt","r");
+    fp_destination_info = fopen("destination_info.txt","r");
+
+
+    ticket_number = ticket_number_accepter();
+
+    while(!feof(fp_passanger_info))
+    {
+        fscanf(fp_passanger_info,"%d\t%s\t%s\t%s\t%d\t%d\t%s\n",&ticket_num,fName,lName,phoneNum,&bus_id2,&seatNum,reservation_day);
+        if(ticket_num == ticket_number)
+        {
+            //printf("%d\t%s\t%s\t%s\t%d\t%d\t%s\n",ticket_num,fName,lName,phoneNum,bus_id2,seatNum,reservation_day);
+            while(!feof(fp_bus_info))
+            {
+                fscanf(fp_bus_info,"%d\t%s\t%d\t%d\t%d\t%s\t%d",&bus_id,plate_num,&source_id,&destination_id,&distance,start_time,&tot_time);
+                if(bus_id2 == bus_id)
+                {
+                    //printf("%d\t%s\t%d\t%d\t%d\t%s\t%d\n",bus_id,plate_num,source_id,destination_id,distance,start_time,tot_time);
+                    while(!feof(fp_source_info))
+                    {
+                        fscanf(fp_source_info,"%d\t%s",&id_so,sou);
+                        if(id_so == source_id)
+                        {
+                            //printf("%d\t%s\n",id_so,sou);
+                            while(!feof(fp_destination_info))
+                            {
+                                fscanf(fp_destination_info,"%d\t%s",&id_des,des);
+                                if(id_des == destination_id)
+                                {
+                                    //printf("%d\t%s\n",id_des,des);
+                                    printf("Ticket number: %d\n",ticket_number);
+                                    printf("Name: %s  %s\n",fName,lName);
+                                    printf("Seat number: %d\n",seatNum);
+                                    printf("Reservation day: %s\n",reservation_day);
+                                    printf("From: %s\n",sou);
+                                    printf("To:  %s\n",des);
+                                    printf("Start time:  %s\n",start_time);
+                                    printf("Enter \"B\" or \"b\" to go back: ");
+                                    scanf("%s",back_var);
+                                    if(strcmp(back_var,"B")==0 || strcmp(back_var,"B")==0)
+                                    {
+                                        passangerDisplay1();
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+            flag = 1;
+        }
+
+
+    }
+    if(flag == 0)
+    {
+        system("cls");
+        ticketInfoDisplay1();
+    }
+    fclose(fp_destination_info);
+    fclose(fp_source_info);
+    fclose(fp_bus_info);
+    fclose(fp_passanger_info);
+}
+
+int ticket_number_accepter()
+{
+    int ticket_number;
+    printf("Enter the ticket number: ");
+    scanf("%d",&ticket_number);
+    return ticket_number;
+}
+
+void InsertBusDisplay1(){
+
+    char new_plate_num[12],new_start[12],new_destination[12],new_start_time[12];
+    int new_distance,new_total_time,bus_id;
+
+    printf("Enter the plate number of the bus: ");
+    scanf("%s",new_plate_num);
+    if(check_plate_num(new_plate_num))
+    {
+        printf("Enter your source: ");
+        scanf("%s",new_start);
+        printf("Enter the destination: ");
+        scanf("%s",new_destination);
+        printf("Enter the distance: ");
+        scanf("%d",&new_distance);
+        printf("Enter the start time: ");
+        scanf("%s",new_start_time);
+        printf("Enter the total time taken to travel: ");
+        scanf("%d",&new_total_time);
+
+        int x = check_start(new_start);
+        int y = check_destination(new_destination);
+        int bus_count = return_counter2("Bus_info.txt")+1;
+        printf("%d\t%d\n",x,y);
+        if(x == 0 && y == 0)
+        {
+            int source_count = return_counter("source_info.txt");
+            write_to_source_file(source_count,new_start);
+            int destination_count = return_counter("destination_info.txt");
+            write_to_destination_file(destination_count,new_destination);
+
+            write_to_busInfo_file(bus_count,new_plate_num,source_count,destination_count,new_distance,new_start_time,new_total_time);
+            printf("%d\t%d",source_count,destination_count);
+        }else if(x == 0 && y == 1)
+        {
+            int source_count = return_counter("source_info.txt");
+            int destination_count = return_existing_counter("destination_info.txt",new_destination);
+            write_to_source_file(source_count,new_start);
+            write_to_busInfo_file(bus_count,new_plate_num,source_count,destination_count,new_distance,new_start_time,new_total_time);
+        }else if(x == 1 && y == 0)
+        {
+            int source_count = return_existing_counter("source_info.txt",new_start);
+            int destination_count = return_counter("destination_info.txt");
+            write_to_destination_file(destination_count,new_destination);
+
+            write_to_busInfo_file(bus_count,new_plate_num,source_count,destination_count,new_distance,new_start_time,new_total_time);
+        }else
+        {
+            system("cls");
+            InsertBusDisplay1();
+            printf("you have entered the existing routine so please change it\n");
+
+        }
+    }
+}
+
+int return_existing_counter(char file_name[],char sou_des[])
+{
+    int id;
+    char file_read[20];
+    FILE *fp;
+    fp = fopen(file_name,"r");
+    printf("here.........\n");
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s",&id,file_read);
+        if(strcmp(file_read,sou_des) ==0)
+        {
+            fclose(fp);
+            return id;
+        }
+
+    }
+    fclose(fp);
+    return 0;
+}
+
+void write_to_busInfo_file(int bus_id,char new_plate_num[],int source_count,int destination_count,int new_distance,char new_start_time[],int new_total_time)
+{
+    FILE *fp;
+    fp = fopen("Bus_info.txt","a");
+    fprintf(fp,"\n%d\t%s\t%d\t%d\t%d\t%s\t%d",bus_id,new_plate_num,source_count,destination_count,new_distance,new_start_time,new_total_time);
+    fclose(fp);
+}
+
+void write_to_source_file(int source_count,char new_start[])
+{
+    FILE *fp;
+    fp = fopen("source_info.txt","a");
+    fprintf(fp,"\n%d\t%s",source_count,new_start);
+    fclose(fp);
+}
+
+void write_to_destination_file(int destination_count,char new_destination[])
+{
+    FILE *fp;
+    fp = fopen("destination_info.txt","a");
+    fprintf(fp,"\n%d\t%s",destination_count,new_destination);
+    fclose(fp);
+}
+
+int return_counter(char file_name[])
+{
+    FILE *fp;
+    fp = fopen(file_name,"r");
+    char sou[20];
+    int id,x=1;
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s",&id,sou);
+        x = x+1;
+    }
+    fclose(fp);
+    return x;
+}
+
+int return_counter2(char file_name[])
+{
+    int x=0;
+    FILE *fp;
+    fp = fopen(file_name,"r");
+    //bus info
+    int bus_id,source_id,destination_id,distance,tot_time;
+    char plate_num[10],start_time[10];
+
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s\t%d\t%d\t%d\t%s\t%d",&bus_id,plate_num,&source_id,&destination_id,&distance,start_time,&tot_time);
+        x = x+1;
+    }
+    fclose(fp);
+    return x;
+}
+
+int check_start(char new_start[])
+{
+    FILE *fp;
+    fp = fopen("source_info.txt","r");
+    char sou[20];
+    int id;
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s",&id,sou);
+        if(strcmp(new_start,sou) == 0)
+        {
+            return 1;
+        }
+    }
+    fclose(fp);
+    return 0;
+
+}
+
+int check_destination(char new_destination[])
+{
+    FILE *fp;
+    fp = fopen("destination_info.txt","r");
+    char des[20];
+    int id;
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s",&id,des);
+        if(strcmp(new_destination,des) == 0)
+        {
+            return 1;
+        }
+    }
+    fclose(fp);
+    return 0;
+
+}
+
+int check_plate_num(int new_plate_num)
+{
+    int bus_id,source_id,destination_id,distance,tot_time;
+    char plate_num[10],start_time[10];
+
+    FILE *fp;
+    fp = fopen("Bus_info.txt","r");
+
+    while(!feof(fp))
+    {
+        fscanf(fp,"%d\t%s\t%d\t%d\t%d\t%s\t%d",&bus_id,plate_num,&source_id,&destination_id,&distance,start_time,&tot_time);
+        if(strcmp(plate_num,new_plate_num)==0)
+        {
+            fclose(fp);
+            return 0;
+        }
+    }
+    fclose(fp);
+    return 1;
+}
+
+int insert_source_destination(char file_name[],char data[])
+{
+    FILE *fp;
+
+    if(strcmp(file_name,"source_info.txt")==0)
+    {
+        int id = return_counter("source_info.txt");
+        fp = fopen("source_info.txt","r");
+        fprintf("\n%d\t%s",id,data);
+        fclose(fp);
+        return id;
+    }else
+    {
+        int id = return_counter("source_info.txt");
+        fp = fopen("destination_info.txt","r");
+        fprintf("\n%d\t%s",id,data);
+        fclose(fp);
+        return id;
+    }
+}
+
+void SeeBusesDisplay1(){
+
+
+    //bus info
+    int bus_id,source_id,destination_id,distance,tot_time;
+    char plate_num[10],start_time[10];
+    //
+    FILE *fp_bus_info;
+    fp_bus_info = fopen("Bus_info.txt","r");
+
+    while(!feof(fp_bus_info))
+    {
+        fscanf(fp_bus_info,"%d\t%s\t%d\t%d\t%d\t%s\t%d",&bus_id,plate_num,&source_id,&destination_id,&distance,start_time,&tot_time);
+        printf("%d\t%s\t%d\t%d\t%d\t%s\t%d\n",bus_id,plate_num,source_id,destination_id,distance,start_time,tot_time);
+    }
+    fclose(fp_bus_info);
+}
+
+void updateBusDisplay1(){
+
+}
+int main(int argc,char *argv[]){
+
+    firstDisplay();
+}

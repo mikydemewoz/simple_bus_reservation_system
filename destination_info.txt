@@ -1,0 +1,4 @@
+1	Addis_Ababa
+2	Adama
+3	Bahirdar
+4	Dila
